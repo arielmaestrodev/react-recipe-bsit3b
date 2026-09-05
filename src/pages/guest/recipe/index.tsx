@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router";
 import api from "@/lib/axios";
+import { Section } from "@/components/ui/section";
+import { PageLoading } from "@/components/common/page-loading";
+import { Modal } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tag } from "@/components/ui/tag";
+import { RecipeMeta } from "@/components/common/recipe-meta";
+import { UpdateRecipeForm } from "@/components/features/recipe/update-recipe-form";
 
 type Recipe = {
   id: number;
@@ -18,6 +26,7 @@ type Recipe = {
 export default function RecipePage() {
   const { id } = useParams();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [openModal, setOpenModal] = useState(false);
 
   // Get Recipe by ID
   useEffect(() => {
@@ -28,24 +37,22 @@ export default function RecipePage() {
     }
 
     getRecipeById();
-  }, [recipe]);
+  }, [id]);
 
   if (!recipe) {
     return (
-      <section className="h-screen flex justify-center items-center flex-col gap-4">
-        <img className="w-10" src="https://upload.wikimedia.org/wikipedia/commons/c/c7/Loading_2.gif?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original" />
-        Loading...
-      </section>
+      <PageLoading />
     )
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-10">
+    <Section>
       <Link to="/" className="text-sm text-gray-600 hover:text-gray-900">
         Back to Page
       </Link>
 
-      <div className="mt-6 overflow-hidden rounded-md border border-gray-200">
+      {/* Recipe Details */}
+      <Card className="mt-6">
         <div className="h-full bg-gray-100">
           <img className="w-full h-[400px] object-cover" src={recipe.image} alt={recipe.name} />
         </div>
@@ -54,25 +61,23 @@ export default function RecipePage() {
           {/* Header Title */}
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-medium">{recipe.name}</h1>
-            <button className="bg-gray-700 text-white text-sm px-3 py-2 rounded-md hover:bg-gray-800 transition-all cursor-pointer">
-              Update
-            </button>
+            <Button onClick={() => setOpenModal(true)}>Update</Button>
           </div>
 
           {/* Mini Details */}
-          <div className="space-y-1 text-sm text-gray-600">
-            <p>Cuisine: {recipe.cuisine}</p>
-            <p>Meal Type: {recipe.mealType.join(" , ")}</p>
-            <p>Difficulty: {recipe.difficulty}</p>
-            <p>Cooking time (minutes): {recipe.cookTimeMinutes} mins</p>
-          </div>
+          <RecipeMeta
+            cuisine={recipe.cuisine}
+            mealType={recipe.mealType}
+            difficulty={recipe.difficulty}
+            cookTimeMinutes={recipe.cookTimeMinutes}
+          />
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1.5">
             {recipe.tags.map((tag) => (
-              <span key={tag} className="rounded bg-gray-100 px-2 py-0.5 text-sm text-gray-600">
+              <Tag key={tag}>
                 {tag}
-              </span>
+              </Tag>
             ))}
           </div>
 
@@ -96,7 +101,18 @@ export default function RecipePage() {
             </ul>
           </div>
         </div>
-      </div>
-    </section>
+
+        {/* Update Recipe Modal */}
+        <Modal open={openModal} onClose={() => setOpenModal(false)} title="Update Recipe">
+          <UpdateRecipeForm
+            recipe={recipe}
+            onSuccess={(updatedRecipe) => {
+              setRecipe({ ...recipe, ...updatedRecipe });
+              setOpenModal(false);
+            }}
+          />
+        </Modal>
+      </Card>
+    </Section>
   )
 }
